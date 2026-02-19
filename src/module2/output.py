@@ -11,7 +11,9 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+from src.pipeline_logger import get_logger
+
+logger = get_logger(__name__)
 
 OUTPUT_VERSION = "1.0.0"
 
@@ -158,6 +160,7 @@ def generate_output(
     metrics = compute_summary_metrics(df, items_removed, shelf_life_caps)
 
     logger.info(f"Output generated: {len(df)} items, version={OUTPUT_VERSION}")
+    logger.info(metrics.summary())
     return df, metrics
 
 

@@ -19,8 +19,9 @@ import numpy as np
 import pandas as pd
 
 from src.config import FTFConfig
+from src.pipeline_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -93,6 +94,12 @@ def compute_brick_contributions(
         brick_nsv["avg_asp"] = 1.0
 
     logger.info(f"Brick contributions: {len(brick_nsv)} bricks, total NSV={total_nsv:,.0f}")
+    for _, row in brick_nsv.iterrows():
+        logger.debug(
+            f"  {row['brick']:20s} NSV={row['historical_nsv']:>12,.0f}  "
+            f"share={row['contribution']:.3f}  "
+            f"ASP={row.get('avg_asp', 0):>8,.1f}"
+        )
     return brick_nsv
 
 
@@ -183,6 +190,10 @@ def apply_trend_adjustment(
 
         mask = targets["brick"].str.upper() == brick.upper()
         targets.loc[mask, "trend_uplift"] = uplift
+        logger.debug(
+            f"  Trend uplift [{brick}]: avg_trend_score={avg_trend_score:.3f}, "
+            f"n_rising={len(approved_rising)}, uplift={uplift:+.3f}"
+        )
 
     targets["adjusted_contribution"] = targets["contribution"] * (1 + targets["trend_uplift"])
 
@@ -224,6 +235,12 @@ def allocate_aop_to_bricks(
     else:
         targets["target_qty"] = targets["target_nsv"].astype(int)
 
+    logger.debug(f"  AOP allocation: total_aop={total_aop:,.0f}, using '{contrib_col}'")
+    for _, row in targets.iterrows():
+        logger.debug(
+            f"    {row['brick']:20s} target_nsv={row['target_nsv']:>12,.0f}  "
+            f"target_qty={row.get('target_qty', 0):>8,.0f}"
+        )
     return targets, total_aop
 
 

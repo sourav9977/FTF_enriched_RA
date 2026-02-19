@@ -19,7 +19,9 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+from src.pipeline_logger import get_logger
+
+logger = get_logger(__name__)
 
 MATCHABLE_ATTRIBUTES = ["pattern", "color", "fit", "sleeve", "neck_type", "length"]
 
@@ -173,10 +175,12 @@ def _build_attribute_matrix(sku_data: pd.DataFrame,
 
     for attr in attributes:
         if attr not in brick_data.columns:
+            logger.debug(f"  [{brick}] attr '{attr}' not in data — skipped")
             continue
         col = brick_data[attr].copy()
         non_null_pct = col.notna().mean()
         if non_null_pct < 0.1:
+            logger.debug(f"  [{brick}] attr '{attr}' only {non_null_pct:.0%} non-null — skipped")
             continue
 
         col = col.fillna("UNKNOWN")
@@ -184,6 +188,7 @@ def _build_attribute_matrix(sku_data: pd.DataFrame,
         n_distinct = col.nunique()
 
         if n_distinct < MIN_DISTINCT_VALUES:
+            logger.debug(f"  [{brick}] attr '{attr}' only {n_distinct} distinct value(s) — skipped")
             continue
 
         dummies = pd.get_dummies(col, prefix=attr, dtype=int)
@@ -279,13 +284,20 @@ def compute_brick_weights(sku_data: pd.DataFrame,
         else:
             coverage[attr] = 0.0
 
-    return BrickWeights(
+    bw = BrickWeights(
         brick=brick,
         weights=weights,
         correlations=attr_corrs,
         sample_size=len(y),
         attribute_coverage=coverage,
     )
+    logger.debug(
+        f"  [{brick}] n={len(y)}, weights: "
+        + ", ".join(f"{k}={v:.3f}" for k, v in sorted(weights.items(), key=lambda x: -x[1]))
+    )
+    for attr, cov in coverage.items():
+        logger.debug(f"    {attr}: coverage={cov:.0%}, |r|={attr_corrs.get(attr, 0):.4f}")
+    return bw
 
 
 def run_factor_analysis(sales_df: pd.DataFrame,

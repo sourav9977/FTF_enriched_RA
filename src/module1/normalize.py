@@ -12,8 +12,9 @@ import pandas as pd
 import numpy as np
 
 from src.config import FTFConfig
+from src.pipeline_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # ── Color Family Mapping ─────────────────────────────────────────────
@@ -301,6 +302,13 @@ def normalize_ra(ra_df: pd.DataFrame, config: FTFConfig) -> pd.DataFrame:
         )
 
     logger.info(f"Normalized RA: {len(df)} rows, {df['brick'].nunique() if 'brick' in df.columns else '?'} bricks")
+    for col, attr_type in attr_columns.items():
+        if col in df.columns:
+            non_null = df[col].notna().sum()
+            n_unique = df[col].nunique()
+            logger.debug(f"  RA norm [{col}]: {non_null}/{len(df)} non-null, {n_unique} unique values")
+            if n_unique <= 15:
+                logger.debug(f"    values: {df[col].value_counts().to_dict()}")
     return df
 
 
@@ -346,6 +354,11 @@ def normalize_trends(trend_df: pd.DataFrame, config: FTFConfig) -> pd.DataFrame:
             )
 
     logger.info(f"Normalized Trends: {len(df)} rows, {df['brick'].nunique() if 'brick' in df.columns else '?'} bricks")
+    for col, attr_type in attr_columns.items():
+        if col in df.columns:
+            non_null = df[col].notna().sum()
+            n_unique = df[col].nunique()
+            logger.debug(f"  Trend norm [{col}]: {non_null}/{len(df)} non-null, {n_unique} unique values")
     return df
 
 

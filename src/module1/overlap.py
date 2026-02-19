@@ -25,8 +25,9 @@ from src.module1.ingest import get_mapping
 from src.module1.factor_analysis import (
     FactorAnalysisResult, get_default_weights, MATCHABLE_ATTRIBUTES,
 )
+from src.pipeline_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Attributes used in overlap matching (RA name → Trend name from YAML)
 _OVERLAP_ATTRS_RA = ["pattern_type", "color", "fit", "sleeve_type", "neck_type", "length"]
@@ -95,7 +96,9 @@ def compute_overlap_score(
 
     if total_w == 0:
         return 0.0
-    return matched_w / total_w
+
+    score = matched_w / total_w
+    return score
 
 
 def score_all_overlaps(
@@ -144,10 +147,26 @@ def score_all_overlaps(
                 })
 
     if not results:
+        logger.debug("  No overlap pairs produced (no brick matches)")
         return pd.DataFrame(columns=["ra_idx", "trend_idx", "brick", "overlap_score"])
 
     df = pd.DataFrame(results)
     df = df.sort_values(["ra_idx", "overlap_score"], ascending=[True, False])
+
+    logger.debug(
+        f"  Overlap scoring: {len(df)} pairs across {df['brick'].nunique()} bricks, "
+        f"score range [{df['overlap_score'].min():.3f}, {df['overlap_score'].max():.3f}], "
+        f"mean={df['overlap_score'].mean():.3f}"
+    )
+    for brick in sorted(df["brick"].unique()):
+        bdf = df[df["brick"] == brick]
+        logger.debug(
+            f"    {brick}: {len(bdf)} pairs, "
+            f"avg={bdf['overlap_score'].mean():.3f}, "
+            f">=1.0: {(bdf['overlap_score']>=1.0).sum()}, "
+            f">=0.6: {(bdf['overlap_score']>=0.6).sum()}"
+        )
+
     return df
 
 
@@ -342,8 +361,14 @@ def classify_items(
         ra_conf = ra_confidence.get(ra_idx, 0.5)
         ftf_conf = ftf_confidence.get(trend_idx, 0.5)
 
+        ra_id = ra_row.get("unique_id", f"idx={ra_idx}")
+
         if score >= config.overlap_threshold:
             # TIER 1: FTF APPROVED
+            logger.debug(
+                f"  TIER1 APPROVED: {ra_id} | overlap={score:.3f} >= {config.overlap_threshold} "
+                f"| trend={trend_row.get('trend_name')} | ra_conf={ra_conf:.3f}, ftf_conf={ftf_conf:.3f}"
+            )
             item = _build_enriched_item(
                 ra_row, trend_row, ra_to_trend, trend_to_ra,
                 ftf_status="APPROVED",
@@ -355,7 +380,11 @@ def classify_items(
             used_trend_indices.add(trend_idx)
 
         elif score >= config.replacement_threshold:
-            # TIER 2: ORIGINAL (trend doesn't qualify)
+            # TIER 2: ORIGINAL (partial match, no trend link)
+            logger.debug(
+                f"  TIER2 ORIGINAL: {ra_id} | overlap={score:.3f} "
+                f"(between {config.replacement_threshold} and {config.overlap_threshold})"
+            )
             item = _build_enriched_item(
                 ra_row, trend_row, ra_to_trend, trend_to_ra,
                 ftf_status="ORIGINAL",
@@ -368,7 +397,10 @@ def classify_items(
         else:
             # TIER 3: Confidence-based decision
             if ftf_conf > ra_conf:
-                # Replace RA with trend-based FTF ADDED
+                logger.debug(
+                    f"  TIER3 REPLACED: {ra_id} | overlap={score:.3f} < {config.replacement_threshold} "
+                    f"| ftf_conf={ftf_conf:.3f} > ra_conf={ra_conf:.3f} → FTF ADDED"
+                )
                 replacement = _build_replacement_item(
                     ra_row, trend_row, trend_to_ra,
                     overlap_score=score,
@@ -379,7 +411,10 @@ def classify_items(
                 result.removed_ra.append(ra_row)
                 used_trend_indices.add(trend_idx)
             else:
-                # RA confidence wins — keep as ORIGINAL
+                logger.debug(
+                    f"  TIER3 KEPT ORIGINAL: {ra_id} | overlap={score:.3f} "
+                    f"| ra_conf={ra_conf:.3f} >= ftf_conf={ftf_conf:.3f}"
+                )
                 item = _build_enriched_item(
                     ra_row, trend_row, ra_to_trend, trend_to_ra,
                     ftf_status="ORIGINAL",
@@ -406,6 +441,13 @@ def classify_items(
             result.original.append(item)
 
     result._used_trend_indices = used_trend_indices
+
+    logger.info(
+        f"  Classification: APPROVED={len(result.approved)}, "
+        f"ORIGINAL={len(result.original)}, "
+        f"ADDED(replaced)={len(result.added_replacements)}, "
+        f"REMOVED_RA={len(result.removed_ra)}"
+    )
     return result
 
 

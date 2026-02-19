@@ -18,8 +18,9 @@ import pandas as pd
 
 from src.config import FTFConfig
 from src.module1.factor_analysis import FactorAnalysisResult, get_default_weights
+from src.pipeline_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -132,7 +133,19 @@ def compute_performance_scores(
         else:
             score = 0.5 * (1 - pw.get("trend_score", 0.15)) + pw.get("trend_score", 0.15) * ts
 
-        scores.at[idx] = min(1.0, max(0.0, score))
+        final_score = min(1.0, max(0.0, score))
+        scores.at[idx] = final_score
+        if brick in brick_lookup.index:
+            logger.debug(
+                f"  Perf [{row.get('unique_id', idx)}] brick={brick}: "
+                f"ROS={norm_ros:.2f}, STR={norm_str:.2f}, "
+                f"trend={ts:.2f} → score={final_score:.3f}"
+            )
+        else:
+            logger.debug(
+                f"  Perf [{row.get('unique_id', idx)}] brick={brick}: "
+                f"no sales data, trend={ts:.2f} → score={final_score:.3f}"
+            )
 
     return scores
 
@@ -173,6 +186,11 @@ def adjust_approved_quantities(
         df.at[idx, "adjusted_quantity"] = adj_qty
         df.at[idx, "adjustment_factor"] = adj_factor
         df.at[idx, "adjustment_reason"] = f"Perf={perf:.2f}, adj={adj_factor:+.2%}"
+        logger.debug(
+            f"  AdjQty [{df.at[idx, 'unique_id'] if 'unique_id' in df.columns else idx}] "
+            f"orig={orig_qty:.0f}, perf={perf:.3f}, factor={adj_factor:+.3f}, "
+            f"dampening={dampening:.3f} → adj={adj_qty}"
+        )
 
     return df
 
@@ -361,8 +379,16 @@ def _nearest_neighbor_estimate(
         avg_qty = np.mean([q for _, q in neighbors])
         projected_ros = avg_qty / n_days if n_days > 0 else 0.0
 
+        logger.debug(
+            f"    NN [{brick}]: {len(neighbors)} neighbors (min_sim={min_sim}), "
+            f"sims={[f'{s:.2f}' for s,_ in neighbors]}, "
+            f"base_qty={base_qty:.0f}, ROS={projected_ros:.2f}"
+        )
         return base_qty, projected_ros, "nearest_neighbor"
     else:
+        logger.debug(
+            f"    NN [{brick}]: only {len(neighbors)} neighbors (need {config.min_nearest_neighbors}) → fallback"
+        )
         return None, None, "insufficient_neighbors"
 
 
@@ -512,6 +538,12 @@ def run_quantity_estimation(
         df.at[idx, "adjusted_quantity"] = adjusted_qty
         df.at[idx, "adjustment_reason"] = f"method={method}, base={base_qty:.0f}, trend_mult applied"
         result.added_estimates += 1
+
+        logger.debug(
+            f"  ADDED [{df.at[idx, 'unique_id'] if 'unique_id' in df.columns else idx}] "
+            f"method={method}, base={base_qty:.0f}, trend_score={ts:.2f}, "
+            f"conf={conf} → qty={adjusted_qty}"
+        )
 
     # ── Shelf-life cap for APPROVED (Step 6c) ─────────────────────────
     df, caps = apply_shelf_life_cap(df, sales_df, config)

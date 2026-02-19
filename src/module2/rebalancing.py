@@ -16,8 +16,9 @@ import numpy as np
 import pandas as pd
 
 from src.config import FTFConfig
+from src.pipeline_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -77,16 +78,19 @@ def apply_moq_constraint(
             trend_score = 0.0
         confidence = str(row.get("trend_confidence", "")).strip().upper()
 
+        item_id = row.get("unique_id", idx)
         if trend_score >= 0.7 and confidence == "HIGH":
             result.at[idx, "adjusted_quantity"] = moq
             result.at[idx, "adjustment_reason"] = (
                 f"{row.get('adjustment_reason', '')}; MOQ boost: {qty:.0f} -> {moq}"
             )
             boosts += 1
+            logger.debug(f"  MOQ BOOST [{item_id}]: {qty:.0f} → {moq} (trend={trend_score:.2f}, conf={confidence})")
         else:
             removed.append(row.to_dict())
             drop_indices.append(idx)
             drops += 1
+            logger.debug(f"  MOQ DROP  [{item_id}]: qty={qty:.0f} < MOQ={moq} (trend={trend_score:.2f}, conf={confidence})")
 
     result = result.drop(index=drop_indices).reset_index(drop=True)
 
@@ -131,6 +135,11 @@ def _compute_rebalance_scores(
             + w.get("mix", 0.10) * mix
         )
         scores.at[idx] = score
+        logger.debug(
+            f"  Rebal score [{row.get('unique_id', idx)}]: "
+            f"overlap={ov:.2f}, trend={ts:.2f}, mix={mix:.1f}, "
+            f"status={status} → score={score:.3f}"
+        )
 
     return scores
 
@@ -189,9 +198,14 @@ def apply_budget_constraint(
         needed_reduction_qty = overage / asp
         actual_reduction = min(max_reduction_qty, needed_reduction_qty)
 
-        df.at[idx, "adjusted_quantity"] = round(qty - actual_reduction)
+        new_qty = round(qty - actual_reduction)
+        df.at[idx, "adjusted_quantity"] = new_qty
         overage -= actual_reduction * asp
         reductions += 1
+        logger.debug(
+            f"  Budget reduce [{row.get('unique_id', idx)}]: "
+            f"{qty:.0f} → {new_qty} (cut={actual_reduction:.0f}, ASP={asp:.0f}, remaining_overage={max(0,overage):,.0f})"
+        )
 
         if df.at[idx, "adjusted_quantity"] < moq:
             removed.append(df.loc[idx].to_dict())

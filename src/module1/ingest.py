@@ -14,7 +14,9 @@ from typing import List, Dict, Optional, Tuple
 import yaml
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+from src.pipeline_logger import get_logger, StepLogger
+
+logger = get_logger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 _MAPPING_FILE = _PROJECT_ROOT / "config" / "data_mapping.yaml"
@@ -225,6 +227,13 @@ def map_columns(df: pd.DataFrame, schema: List[ColumnRule]) -> pd.DataFrame:
                 rename[col] = target
                 mapped_targets.add(target)
 
+    logger.debug(f"  Column mapping: {len(rename)} of {len(df.columns)} cols mapped")
+    for raw, internal in sorted(rename.items(), key=lambda x: x[1]):
+        logger.debug(f"    {raw!r:30s} -> {internal}")
+    unmapped = [c for c in df.columns if c not in rename]
+    if unmapped:
+        logger.debug(f"  Unmapped columns ({len(unmapped)}): {unmapped[:10]}")
+
     return df.rename(columns=rename)
 
 
@@ -290,6 +299,15 @@ def validate_schema(df: pd.DataFrame, schema: List[ColumnRule],
     result.rejected_rows = rejected_count
     if rejected_count > 0:
         result.warnings.append(f"{rejected_count} rows rejected for missing mandatory fields")
+
+    logger.debug(
+        f"  Validation [{entity_name}]: {result.accepted_rows}/{result.total_rows} accepted, "
+        f"{result.rejected_rows} rejected, {len(result.warnings)} warnings, {len(result.errors)} errors"
+    )
+    for w in result.warnings:
+        logger.debug(f"    WARN: {w}")
+    for e in result.errors:
+        logger.debug(f"    ERROR: {e}")
 
     return accepted, result
 
