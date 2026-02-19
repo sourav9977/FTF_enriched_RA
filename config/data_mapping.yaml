@@ -1,0 +1,721 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  FTF Prototype — Data Mapping Configuration
+#  Source of truth for all input file schemas, column aliases,
+#  required/optional fields, and cross-entity attribute mapping.
+# ═══════════════════════════════════════════════════════════════════════
+
+
+# ── RA (Range Architecture) ───────────────────────────────────────────
+
+ra:
+  columns:
+    - name: unique_id
+      required: true
+      dtype: str
+      aliases: [unique id, uniqueid, id]
+
+    - name: business_unit
+      required: true
+      dtype: str
+      aliases: [business unit]
+
+    - name: sales_channel
+      required: false
+      dtype: str
+      aliases: [sales channel, channel]
+
+    - name: season
+      required: true
+      dtype: str
+      aliases: [season_code]
+
+    - name: segment
+      required: true
+      dtype: str
+      aliases: [brand_segment, master_category]
+      maps_to_trend: gender
+
+    - name: family
+      required: true
+      dtype: str
+      aliases: [category]
+
+    - name: brand
+      required: true
+      dtype: str
+      aliases: [brand_name]
+
+    - name: brick
+      required: true
+      dtype: str
+      aliases: [subcategory, sub category, sub_category]
+      maps_to_trend: brick
+
+    - name: class_
+      required: true
+      dtype: str
+      aliases: [class]
+      maps_to_trend: category
+
+    - name: reference_style_id
+      required: false
+      dtype: str
+      aliases: [reference style id, reference style_id]
+
+    - name: month_of_drop
+      required: true
+      dtype: str
+      aliases: [month of drop]
+      maps_to_trend: m1_month
+
+    - name: hit
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: fashion_grade
+      required: true
+      dtype: str
+      aliases: [fashion grade, fashion type, fashion_type]
+
+    - name: product_group
+      required: false
+      dtype: str
+      aliases: [product group]
+
+    - name: fixture_type
+      required: false
+      dtype: str
+      aliases: [fixture type]
+
+    - name: seasonality
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: display_type
+      required: false
+      dtype: str
+      aliases: [display type]
+
+    - name: fabric_type
+      required: false
+      dtype: str
+      aliases: [fabric type]
+
+    - name: fabric_composition
+      required: false
+      dtype: str
+      aliases: [fabric composition]
+
+    - name: fabric_weave
+      required: false
+      dtype: str
+      aliases: [fabric weave]
+
+    - name: mrp
+      required: true
+      dtype: str
+      aliases: [price]
+
+    - name: fit
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: [fit/style type]
+      maps_to_trend: style
+
+    - name: neck_type
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: [neck type]
+      maps_to_trend: neck_type
+
+    - name: waist
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: []
+
+    - name: pattern_type
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: [pattern type]
+      maps_to_trend: print_
+
+    - name: sleeve_type
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: [sleeve type]
+      maps_to_trend: sleeve
+
+    - name: wash_type
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: [wash type]
+
+    - name: color
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: [colour]
+      maps_to_trend: color
+
+    - name: length
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: []
+      maps_to_trend: length
+
+    - name: embellishment
+      required: false    # wildcard in matching when null
+      dtype: str
+      aliases: [emblishment]
+
+    - name: quantities_planned
+      required: true
+      dtype: int
+      aliases: [quantities planned, qty, quantity, buyer_suggested_buy_qty, buyer suggested buy qty]
+
+
+# ── Trend Report ──────────────────────────────────────────────────────
+
+trend_report:
+  columns:
+    - name: gender
+      required: true
+      dtype: str
+      aliases: []
+      maps_to_ra: segment
+
+    - name: category
+      required: true
+      dtype: str
+      aliases: []
+      maps_to_ra: class_
+
+    - name: brick
+      required: true
+      dtype: str
+      aliases: [subcategory, sub category]
+      maps_to_ra: brick
+
+    - name: trend_name
+      required: true
+      dtype: str
+      aliases: [trend name]
+
+    - name: print_
+      required: true
+      dtype: str
+      aliases: [print]
+      maps_to_ra: pattern_type
+
+    - name: pattern
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: style
+      required: true
+      dtype: str
+      aliases: []
+      maps_to_ra: fit
+
+    - name: neck_type
+      required: true
+      dtype: str
+      aliases: [neck type]
+      maps_to_ra: neck_type
+
+    - name: length
+      required: true
+      dtype: str
+      aliases: []
+      maps_to_ra: length
+
+    - name: sleeve
+      required: true
+      dtype: str
+      aliases: [sleeve type, sleeve_type]
+      maps_to_ra: sleeve_type
+
+    - name: color
+      required: true
+      dtype: str
+      aliases: [colour]
+      maps_to_ra: color
+
+    - name: current_score
+      required: true
+      dtype: float
+      aliases: [current score]
+
+    - name: m1_month
+      required: true
+      dtype: str
+      aliases: [month]
+      maps_to_ra: month_of_drop
+
+    - name: m1_score
+      required: true
+      dtype: float
+      aliases: [score]
+
+    - name: m1_stage
+      required: true
+      dtype: str
+      aliases: [stage]
+
+    - name: topk_prob
+      required: true
+      dtype: float
+      aliases: [topk prob, top-k probability]
+
+    - name: m2_month
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: m2_score
+      required: true
+      dtype: float
+      aliases: []
+
+    - name: m2_stage
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: m2_topk_prob
+      required: true
+      dtype: float
+      aliases: []
+
+    - name: m3_month
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: m3_score
+      required: true
+      dtype: float
+      aliases: []
+
+    - name: m3_stage
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: m3_topk_prob
+      required: true
+      dtype: float
+      aliases: []
+
+    - name: m4_month
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: m4_score
+      required: true
+      dtype: float
+      aliases: []
+
+    - name: m4_stage
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: m4_topk_prob
+      required: true
+      dtype: float
+      aliases: []
+
+    - name: business_label
+      required: true
+      dtype: str
+      aliases: [business label]
+
+    - name: confidence
+      required: true
+      dtype: str
+      aliases: []
+
+    - name: trajectory
+      required: true
+      dtype: str
+      aliases: []
+
+  # Trend report has merged Excel headers with repeating M1-M4 blocks.
+  # After de-duplication (Month → Month, Month_2, Month_3, Month_4), map to internal names.
+  dedup_column_map:
+    month: m1_month
+    score: m1_score
+    stage: m1_stage
+    topk prob: topk_prob
+    month_2: m2_month
+    score_2: m2_score
+    stage_2: m2_stage
+    topk prob_2: m2_topk_prob
+    month_3: m3_month
+    score_3: m3_score
+    stage_3: m3_stage
+    topk prob_3: m3_topk_prob
+    month_4: m4_month
+    score_4: m4_score
+    stage_4: m4_stage
+    topk prob_4: m4_topk_prob
+
+  # Known header keywords to auto-detect the real header row in merged Excel files
+  header_keywords:
+    - gender
+    - category
+    - brick
+    - subcategory
+    - pattern
+    - style
+    - color
+    - colour
+    - sleeve
+    - neck type
+    - length
+    - confidence
+    - trajectory
+    - trend name
+    - print
+
+
+# ── Sales Data ────────────────────────────────────────────────────────
+
+sales:
+  columns:
+    - name: channel
+      required: true
+      dtype: str
+      aliases: [sales_channel, format_desc]
+
+    - name: store_code
+      required: true
+      dtype: str
+      aliases: [store code, site_id, site]
+
+    - name: sku
+      required: true
+      dtype: str
+      aliases: [sku_code, ean, article]
+
+    - name: style_code
+      required: false
+      dtype: str
+      aliases: [style code, option_code]
+
+    - name: day
+      required: true
+      dtype: date
+      aliases: [date, sale_date, billing_date]
+
+    - name: quantity
+      required: true
+      dtype: int
+      aliases: [qty, quantity_sold, billing_qty]
+
+    - name: revenue
+      required: false
+      dtype: float
+      aliases: [nsv, net_sales_value, net_sales]
+
+    - name: asp
+      required: false
+      dtype: float
+      aliases: [selling_price]
+
+    - name: mrp
+      required: false
+      dtype: float
+      aliases: [price, gross_sales]
+
+    - name: discount_value
+      required: false
+      dtype: float
+      aliases: [discount]
+
+    - name: cost
+      required: false
+      dtype: float
+      aliases: []
+
+    - name: gross_margin
+      required: false
+      dtype: float
+      aliases: []
+
+    - name: color
+      required: false
+      dtype: str
+      aliases: [colour]
+
+    - name: brick
+      required: false
+      dtype: str
+      aliases: [mh_brick]
+
+    - name: segment
+      required: false
+      dtype: str
+      aliases: [mh_segment]
+
+    - name: family
+      required: false
+      dtype: str
+      aliases: [mh_family]
+
+    - name: class_
+      required: false
+      dtype: str
+      aliases: [mh_class]
+
+    - name: hit
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: season
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: fashion_grade
+      required: false
+      dtype: str
+      aliases: []
+
+
+# ── Product Catalog ───────────────────────────────────────────────────
+
+catalog:
+  columns:
+    - name: sku_code
+      required: true
+      dtype: str
+      aliases: [sku, ean, article]
+
+    - name: style
+      required: false
+      dtype: str
+      aliases: [style_code, option_code, style_id]
+
+    - name: brand
+      required: false
+      dtype: str
+      aliases: [brand_id_desc, brand_name, brand_desc]
+
+    - name: brick
+      required: false
+      dtype: str
+      aliases: [subcategory, level5_desc, brick_name]
+
+    - name: segment
+      required: false
+      dtype: str
+      aliases: [level1_desc, brand_segment, segment_name]
+
+    - name: family
+      required: false
+      dtype: str
+      aliases: [level2_desc, category, family_name]
+
+    - name: fashion_grade
+      required: false
+      dtype: str
+      aliases: [fashion grade, fashion_grade_desc]
+
+    - name: fit
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: pattern
+      required: false
+      dtype: str
+      aliases: [pattern_type]
+
+    - name: color
+      required: false
+      dtype: str
+      aliases: [primary_color, colour, sap_color]
+
+    - name: sleeve
+      required: false
+      dtype: str
+      aliases: [sleeve_type]
+
+    - name: neck_type
+      required: false
+      dtype: str
+      aliases: [neck type]
+
+    - name: length
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: mrp
+      required: false
+      dtype: float
+      aliases: [price]
+
+    - name: season
+      required: false
+      dtype: str
+      aliases: [season_desc]
+
+    - name: size
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: hit
+      required: false
+      dtype: str
+      aliases: []
+
+
+# ── AOP (Annual Operating Plan) ──────────────────────────────────────
+
+aop:
+  columns:
+    - name: channel
+      required: true
+      dtype: str
+      aliases: [sales_channel]
+
+    - name: brand
+      required: false
+      dtype: str
+      aliases: [brand_name]
+
+    - name: brand_segment
+      required: false
+      dtype: str
+      aliases: [segment]
+
+    - name: family
+      required: false
+      dtype: str
+      aliases: [category]
+
+    - name: fashion_grade
+      required: true
+      dtype: str
+      aliases: [fashion grade]
+
+    - name: period
+      required: true
+      dtype: str
+      aliases: [month, month_of_drop]
+
+    - name: year
+      required: false
+      dtype: int
+      aliases: []
+
+    - name: revenue
+      required: true
+      dtype: float
+      aliases: [target_nsv, aop_target]
+
+    - name: mrp
+      required: false
+      dtype: float
+      aliases: [avg_mrp]
+
+    - name: margin
+      required: false
+      dtype: float
+      aliases: [im, intake_margin]
+
+    - name: store_code
+      required: false
+      dtype: str
+      aliases: [store code, site_id]
+
+
+# ── Site Master ───────────────────────────────────────────────────────
+
+site_master:
+  columns:
+    - name: channel
+      required: true
+      dtype: str
+      aliases: [sales_channel]
+
+    - name: store_code
+      required: true
+      dtype: str
+      aliases: [store code, site_id]
+
+    - name: city
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: region
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: cluster
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: is_online
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: active
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: brand_segment
+      required: false
+      dtype: str
+      aliases: [segment]
+
+    - name: fashion_grade
+      required: false
+      dtype: str
+      aliases: [fashion grade]
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Cross-Entity Attribute Mapping (for overlap matching)
+#
+#  Maps RA field names ↔ Trend Report field names.
+#  These are the matchable attributes used in Step 4a overlap scoring.
+# ═══════════════════════════════════════════════════════════════════════
+
+attribute_mapping:
+  ra_to_trend:
+    segment: gender
+    class_: category
+    brick: brick
+    pattern_type: print_
+    fit: style
+    neck_type: neck_type
+    length: length
+    sleeve_type: sleeve
+    color: color
+    month_of_drop: m1_month
+
+  trend_to_ra:
+    gender: segment
+    category: class_
+    brick: brick
+    print_: pattern_type
+    style: fit
+    neck_type: neck_type
+    length: length
+    sleeve: sleeve_type
+    color: color
+    m1_month: month_of_drop
