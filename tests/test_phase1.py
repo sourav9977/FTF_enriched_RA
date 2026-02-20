@@ -59,6 +59,7 @@ def make_trend_df(n=4):
     Includes all M1-M4 forecast columns as required by the schema.
     """
     return pd.DataFrame({
+        "Trend_ID": [f"TID_{i:04x}" for i in range(n)],
         "Gender": ["men", "men", "women", "men"][:n],
         "Category": ["topwear", "topwear", "topwear", "bottomwear"][:n],
         "Brick": ["SHIRTS", "T-SHIRTS", "TOPS", "JEANS"][:n],
@@ -184,7 +185,7 @@ class TestYAMLMapping:
         assert "business_unit" in required
         assert "season" in required
         assert "fashion_grade" in required
-        assert "mrp" in required
+        assert "mrp" not in required  # MRP optional — null rows still accepted
         # Matchable attributes — optional (wildcard when null)
         assert "fit" not in required
         assert "neck_type" not in required
@@ -203,19 +204,22 @@ class TestYAMLMapping:
     def test_trend_all_fields_required(self):
         m = get_mapping()
         required = {r.internal_name for r in m.trend_schema if r.required}
+        optional = {r.internal_name for r in m.trend_schema if not r.required}
         assert "gender" in required
         assert "category" in required
         assert "brick" in required
         assert "trend_name" in required
+        assert "trend_id" in required
         assert "print_" in required
         assert "pattern" in required
         assert "style" in required
-        assert "neck_type" in required
-        assert "sleeve" in required
         assert "color" in required
         assert "current_score" in required
         assert "business_label" in required
         assert "confidence" in required
+        # neck_type and sleeve are optional (null for bottomwear)
+        assert "neck_type" in optional
+        assert "sleeve" in optional
         assert "trajectory" in required
 
     def test_cross_mapping_ra_to_trend(self):

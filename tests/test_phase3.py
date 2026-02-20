@@ -99,6 +99,7 @@ def make_trends_df(n=4):
     lengths = ["REGULAR", "SHORT", "LONG"]
 
     return pd.DataFrame({
+        "trend_id": [f"TID_{i:04x}" for i in range(n)],
         "trend_name": [f"Trend_{i}" for i in range(n)],
         "brick": ["SHIRTS"] * n,
         "print_": rng.choice(prints, n).tolist(),

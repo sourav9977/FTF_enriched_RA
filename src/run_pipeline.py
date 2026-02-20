@@ -148,8 +148,7 @@ def run_pipeline(
 
         step.log_summary(
             bricks_with_weights=len(factor_result.brick_weights),
-            bricks_analyzed=factor_result.bricks_analyzed,
-            bricks_skipped=factor_result.bricks_skipped,
+            bricks_skipped=len(factor_result.skipped_bricks),
         )
         for bw in factor_result.brick_weights.values():
             step.log_calc(
@@ -183,7 +182,7 @@ def run_pipeline(
         classification = classify_items(
             ra_df, trends_df, overlap_scores,
             ra_confidence, ftf_confidence,
-            factor_result, config,
+            config,
         )
         step.log_summary(
             approved=len(classification.approved),

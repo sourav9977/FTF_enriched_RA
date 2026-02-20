@@ -77,6 +77,7 @@ ra:
       required: true
       dtype: str
       aliases: [fashion grade, fashion type, fashion_type]
+      allowed_values: [APL-FASHION, APL-FAST FASHION]
 
     - name: product_group
       required: false
@@ -114,7 +115,7 @@ ra:
       aliases: [fabric weave]
 
     - name: mrp
-      required: true
+      required: false
       dtype: str
       aliases: [price]
 
@@ -179,6 +180,18 @@ ra:
 
 trend_report:
   columns:
+    # ── Identity ────────────────────────────────────────────────────────
+    - name: trend_id
+      required: true
+      dtype: str
+      aliases: [trend id]
+
+    - name: trend_name
+      required: true
+      dtype: str
+      aliases: [trend name, trend_description]
+
+    # ── Taxonomy ────────────────────────────────────────────────────────
     - name: gender
       required: true
       dtype: str
@@ -197,11 +210,7 @@ trend_report:
       aliases: [subcategory, sub category]
       maps_to_ra: brick
 
-    - name: trend_name
-      required: true
-      dtype: str
-      aliases: [trend name]
-
+    # ── Matchable Attributes ────────────────────────────────────────────
     - name: print_
       required: true
       dtype: str
@@ -220,9 +229,9 @@ trend_report:
       maps_to_ra: fit
 
     - name: neck_type
-      required: true
+      required: false
       dtype: str
-      aliases: [neck type]
+      aliases: [neck type, neckline]
       maps_to_ra: neck_type
 
     - name: length
@@ -232,7 +241,7 @@ trend_report:
       maps_to_ra: length
 
     - name: sleeve
-      required: true
+      required: false
       dtype: str
       aliases: [sleeve type, sleeve_type]
       maps_to_ra: sleeve_type
@@ -243,109 +252,183 @@ trend_report:
       aliases: [colour]
       maps_to_ra: color
 
+    # ── Current Scores & Rank ───────────────────────────────────────────
     - name: current_score
       required: true
       dtype: float
       aliases: [current score]
 
+    - name: current_rank
+      required: false
+      dtype: int
+      aliases: [current rank]
+
+    # ── Forecast Month 1 ────────────────────────────────────────────────
     - name: m1_month
       required: true
       dtype: str
-      aliases: [month]
+      aliases: [month, forecast_month_1]
       maps_to_ra: month_of_drop
 
     - name: m1_score
       required: true
       dtype: float
-      aliases: [score]
+      aliases: [score, predicted_score_1mo]
 
     - name: m1_stage
       required: true
       dtype: str
-      aliases: [stage]
+      aliases: [stage, direction_1mo]
 
     - name: topk_prob
       required: true
       dtype: float
-      aliases: [topk prob, top-k probability]
+      aliases: [topk prob, top-k probability, breakout_probability_1mo]
 
+    # ── Forecast Month 2 ────────────────────────────────────────────────
     - name: m2_month
       required: true
       dtype: str
-      aliases: []
+      aliases: [forecast_month_2]
 
     - name: m2_score
       required: true
       dtype: float
-      aliases: []
+      aliases: [predicted_score_2mo]
 
     - name: m2_stage
       required: true
       dtype: str
-      aliases: []
+      aliases: [direction_2mo]
 
     - name: m2_topk_prob
       required: true
       dtype: float
-      aliases: []
+      aliases: [breakout_probability_2mo]
 
+    # ── Forecast Month 3 ────────────────────────────────────────────────
     - name: m3_month
       required: true
       dtype: str
-      aliases: []
+      aliases: [forecast_month_3]
 
     - name: m3_score
       required: true
       dtype: float
-      aliases: []
+      aliases: [predicted_score_3mo]
 
     - name: m3_stage
       required: true
       dtype: str
-      aliases: []
+      aliases: [direction_3mo]
 
     - name: m3_topk_prob
       required: true
       dtype: float
-      aliases: []
+      aliases: [breakout_probability_3mo]
 
+    # ── Forecast Month 4 ────────────────────────────────────────────────
     - name: m4_month
       required: true
       dtype: str
-      aliases: []
+      aliases: [forecast_month_4]
 
     - name: m4_score
       required: true
       dtype: float
-      aliases: []
+      aliases: [predicted_score_4mo]
 
     - name: m4_stage
       required: true
       dtype: str
-      aliases: []
+      aliases: [direction_4mo]
 
     - name: m4_topk_prob
       required: true
       dtype: float
-      aliases: []
+      aliases: [breakout_probability_4mo]
 
+    # ── Summary & Classification ────────────────────────────────────────
     - name: business_label
       required: true
       dtype: str
-      aliases: [business label]
+      aliases: [business label, alert_type]
 
     - name: confidence
       required: true
       dtype: str
-      aliases: []
+      aliases: [confidence_level]
 
     - name: trajectory
       required: true
       dtype: str
+      aliases: [trajectory_summary]
+
+    # ── Momentum & Signals ──────────────────────────────────────────────
+    - name: momentum
+      required: false
+      dtype: str
+      aliases: [recent_momentum]
+
+    - name: momentum_strength
+      required: false
+      dtype: int
       aliases: []
 
-  # Trend report has merged Excel headers with repeating M1-M4 blocks.
+    - name: risk_flag
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: peak_month
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: quick_signal_score
+      required: false
+      dtype: int
+      aliases: []
+
+    - name: recommended_action
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: alert_priority
+      required: false
+      dtype: int
+      aliases: []
+
+    # ── Additional Enrichment ───────────────────────────────────────────
+    - name: fabric
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: fabric_confidence
+      required: false
+      dtype: float
+      aliases: []
+
+    - name: report_month
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: breakout_likelihood
+      required: false
+      dtype: str
+      aliases: []
+
+    - name: expected_window
+      required: false
+      dtype: str
+      aliases: []
+
+  # Trend report may have merged Excel headers with repeating M1-M4 blocks.
   # After de-duplication (Month → Month, Month_2, Month_3, Month_4), map to internal names.
+  # Not needed for files with explicit suffixed column names (e.g. Forecast_Month_1, Direction_2Mo).
   dedup_column_map:
     month: m1_month
     score: m1_score
@@ -375,11 +458,14 @@ trend_report:
     - color
     - colour
     - sleeve
+    - neckline
     - neck type
     - length
     - confidence
     - trajectory
     - trend name
+    - trend_description
+    - trend_id
     - print
 
 

@@ -32,6 +32,7 @@ class ColumnRule:
     aliases: List[str] = field(default_factory=list)
     maps_to_trend: Optional[str] = None
     maps_to_ra: Optional[str] = None
+    allowed_values: Optional[List[str]] = None
 
 
 def _load_mapping_yaml(path: Path = None) -> dict:
@@ -54,6 +55,7 @@ def _parse_schema(entity_config: dict) -> List[ColumnRule]:
             aliases=col_def.get("aliases", []),
             maps_to_trend=col_def.get("maps_to_trend"),
             maps_to_ra=col_def.get("maps_to_ra"),
+            allowed_values=col_def.get("allowed_values"),
         ))
     return rules
 
@@ -280,6 +282,27 @@ def validate_schema(df: pd.DataFrame, schema: List[ColumnRule],
                     "reason": f"Missing mandatory field: {col}",
                 })
             mask_valid &= ~null_mask
+
+    # Allowed-values filter: reject rows where column value not in the allowed set
+    for rule in schema:
+        if rule.allowed_values and rule.internal_name in df.columns:
+            col = rule.internal_name
+            allowed_upper = {v.strip().upper() for v in rule.allowed_values}
+            col_upper = df[col].astype(str).str.strip().str.upper()
+            disallowed_mask = ~col_upper.isin(allowed_upper) & df[col].notna()
+            if disallowed_mask.any():
+                n_disallowed = disallowed_mask.sum()
+                bad_values = col_upper[disallowed_mask].value_counts().head(5).to_dict()
+                result.warnings.append(
+                    f"{n_disallowed} rows rejected: '{col}' not in {rule.allowed_values} "
+                    f"(found: {bad_values})"
+                )
+                for idx in df.index[disallowed_mask]:
+                    result.rejection_log.append({
+                        "row": idx,
+                        "reason": f"'{col}' value '{df.at[idx, col]}' not in allowed: {rule.allowed_values}",
+                    })
+                mask_valid &= ~disallowed_mask
 
     optional_cols = [r.internal_name for r in schema
                      if not r.required and r.internal_name in df.columns]
